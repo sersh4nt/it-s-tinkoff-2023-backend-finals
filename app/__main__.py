@@ -19,6 +19,10 @@ async def consume():
     consumer = AIOKafkaConsumer(
         settings.CURRENCY_KAFKA_TOPIC_NAME,
         bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
+        enable_auto_commit=True,
+        auto_commit_interval_ms=500,
+        auto_offset_reset="earliest",
+        group_id="asdad",
     )
 
     await consumer.start()
@@ -33,7 +37,6 @@ async def consume():
         consumer.stop()
 
 
-
 app = FastAPI()
 
 
@@ -43,8 +46,7 @@ async def create_tables() -> None:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    loop = asyncio.get_event_loop()
-    loop.create_task(consume())
+    asyncio.create_task(consume())
 
 
 @app.exception_handler(RequestValidationError)
