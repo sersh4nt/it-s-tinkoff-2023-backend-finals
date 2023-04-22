@@ -1,4 +1,4 @@
-FROM cr.yandex/crp9q9dbm5n3ipl1neu3/python:3.11-bullseye
+FROM python:3.11-bullseye
 
 ARG WORK_DIR=/opt/mnt
 ENV PYTHONPATH=$WORK_DIR
