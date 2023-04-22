@@ -1,8 +1,9 @@
 from datetime import date, datetime
-from typing import Optional, Annotated
-from fastapi.responses import JSONResponse
+from typing import Annotated, Optional
+
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models, schemas
@@ -46,7 +47,7 @@ async def topup(
 
 @router.post("/transfers")
 async def create_transfer(
-    data: schemas.TransactionCreate, session=Depends(get_async_session)
+    data: schemas.TransactionCreate, session: AsyncSession = Depends(get_async_session)
 ):
     sender = await accounts_service.get_account_by_id(session, data.sender_id)
     reciever = await accounts_service.get_account_by_id(session, data.reciever_id)
@@ -54,7 +55,9 @@ async def create_transfer(
     if sender is None or reciever is None:
         raise HTTPException(400)
 
-    await transactions_service.create_transaction()
+    await transactions_service.create_transaction(
+        sender, reciever, data.date, data.amount, session
+    )
 
     return JSONResponse({})
 
