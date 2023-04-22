@@ -1,4 +1,5 @@
 import asyncio
+import json
 from collections import defaultdict
 from decimal import Decimal
 
@@ -19,10 +20,7 @@ async def consume():
     consumer = AIOKafkaConsumer(
         settings.CURRENCY_KAFKA_TOPIC_NAME,
         bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
-        enable_auto_commit=True,
-        auto_commit_interval_ms=500,
-        auto_offset_reset="earliest",
-        group_id="asdad",
+        value_deserializer=lambda x: json.loads(x),
     )
 
     await consumer.start()
