@@ -1,7 +1,7 @@
-from datetime import date, datetime
-from typing import Any, Literal
+from datetime import date
+from typing import Literal
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class AccountCreate(BaseModel):
@@ -10,10 +10,6 @@ class AccountCreate(BaseModel):
     country: str
     birthday: date = Field(..., alias="birthDay")
     currency: Literal["RUB", "USD", "GBP", "EUR"]
-
-    # @validator("birthday", pre=True)
-    # def parse_birthday(cls, value: Any) -> date:
-    #     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
 class AccountCreateResponse(BaseModel):

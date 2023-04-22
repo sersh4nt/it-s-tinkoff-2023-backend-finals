@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import date, datetime
+
+from dateutil import relativedelta
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models, schemas
@@ -13,6 +16,9 @@ router = APIRouter()
 async def create_account(
     data: schemas.AccountCreate, session: AsyncSession = Depends(get_async_session)
 ):
+    age = relativedelta(date.today(), data.birthday)
+    if age < 14 or age > 120:
+        raise HTTPException(400)
     account = await accounts_service.create_account(session, data)
     return {"accountNumber": account.id}
 
@@ -35,3 +41,31 @@ async def topup(
     transaction = await transactions_service.topup_account(data, account, session)
     amount = await accounts_service.get_account_balance(session, account)
     return {"amount": amount, "topUpDate": transaction.date}
+
+
+@router.post("/transfers")
+async def create_transfer(
+    data: schemas.TransactionCreate, session=Depends(get_async_session)
+):
+    sender = await accounts_service.get_account_by_id(session, data.sender_id)
+    reciever = await accounts_service.get_account_by_id(session, data.reciever_id)
+
+    transactions = await transactions_service.create_transaction()
+
+
+@router.get(
+    "/api/v1/account-turnover/{account_id}", response_class=schemas.AccountBalance
+)
+async def get_transactions(
+    start_date: datetime = Query(..., alias="startDate"),
+    end_date: datetime = Query(..., alias="endDate"),
+    session=Depends(get_async_session),
+    account: models.Account = Depends(get_account),
+):
+    if start_date and end_date and end_date >= start_date:
+        raise HTTPException(400)
+    
+    sum = await transactions_service.get_trans_sum(
+        account, start_date, end_date, session
+    )
+    return {"amount": sum, "currency": account.currency}
