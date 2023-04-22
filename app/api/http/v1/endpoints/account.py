@@ -63,7 +63,7 @@ async def create_transfer(
 
 
 @router.get(
-    "/api/v1/account-turnover/{account_id}", response_model=schemas.AccountBalance
+    "/account-turnover/{account_id}", response_model=schemas.AccountBalance
 )
 async def get_transactions(
     start_date: Annotated[datetime | None, Query(..., alias="startDate")] = None,
