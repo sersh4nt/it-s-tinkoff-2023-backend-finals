@@ -2,12 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models, schemas
 from app.models.transaction import Transaction
 
+from .account import get_account_balance
 from .kafka import rate as rate_service
 
 
@@ -40,6 +42,10 @@ async def create_transaction(
     if sender.currency != reciever.currency:
         rate = rate_service.get_rate(sender.currency, reciever.currency)
         amount /= rate
+
+    sender_money = await get_account_balance(session, sender)
+    if sender_money < amount:
+        raise HTTPException(400)
 
     transaction = models.Transaction(
         reciever_id=reciever.id,
