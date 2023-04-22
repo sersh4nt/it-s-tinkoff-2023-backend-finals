@@ -1,4 +1,6 @@
 import asyncio
+from collections import defaultdict
+from decimal import Decimal
 
 import uvicorn
 from aiokafka import AIOKafkaConsumer
@@ -10,15 +12,27 @@ from app.api.http.v1.router import http_router
 from app.core.config import settings
 from app.db.base_class import Base
 from app.db.session import engine
-from app.services.kafka import consume
+from app.services.kafka import rate
 
-loop = asyncio.get_event_loop()
 
-consumer = AIOKafkaConsumer(
-    settings.CURRENCY_KAFKA_TOPIC_NAME,
-    bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
-    loop=loop,
-)
+async def consume():
+    consumer = AIOKafkaConsumer(
+        settings.CURRENCY_KAFKA_TOPIC_NAME,
+        bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
+    )
+
+    await consumer.start()
+    try:
+        async for message in consumer:
+            rate_ = defaultdict(lambda: dict())
+            for k, v in message.value.items():
+                rate[k[:3]][k[3:]] = Decimal(v)
+                rate[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
+            rate.update_rate(rate_)
+    finally:
+        consumer.stop()
+
+
 
 app = FastAPI()
 
@@ -28,12 +42,9 @@ async def create_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    loop.create_task(consume(consumer))
 
-
-@app.on_event("shutdown")
-async def shutdown():
-    await consumer.stop()
+    loop = asyncio.get_event_loop()
+    loop.create_task(consume())
 
 
 @app.exception_handler(RequestValidationError)

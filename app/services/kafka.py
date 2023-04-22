@@ -1,7 +1,4 @@
-from collections import defaultdict
 from decimal import Decimal
-
-from aiokafka import AIOKafkaConsumer
 
 
 class CurrencyRate:
@@ -18,16 +15,3 @@ class CurrencyRate:
 
 
 rate = CurrencyRate()
-
-
-async def consume(consumer: AIOKafkaConsumer):
-    await consumer.start()
-    try:
-        async for message in consumer:
-            rate_ = defaultdict(lambda: dict())
-            for k, v in message.value.items():
-                rate[k[:3]][k[3:]] = Decimal(v)
-                rate[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
-            rate.update_rate(rate_)
-    finally:
-        consumer.stop()
