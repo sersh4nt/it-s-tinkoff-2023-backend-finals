@@ -71,7 +71,7 @@ async def get_transactions(
     session: AsyncSession = Depends(get_async_session),
     account: models.Account = Depends(get_account),
 ):
-    if start_date and end_date and end_date >= start_date:
+    if start_date and end_date and start_date >= end_date:
         raise HTTPException(400)
 
     sum = await transactions_service.get_trans_sum(
