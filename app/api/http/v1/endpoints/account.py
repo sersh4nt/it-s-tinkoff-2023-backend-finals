@@ -1,6 +1,7 @@
 from datetime import date, datetime
+from typing import Optional, Annotated
 
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +17,7 @@ router = APIRouter()
 async def create_account(
     data: schemas.AccountCreate, session: AsyncSession = Depends(get_async_session)
 ):
-    age = relativedelta(date.today(), data.birthday)
+    age = relativedelta(date.today(), data.birthday).years
     if age < 14 or age > 120:
         raise HTTPException(400)
     account = await accounts_service.create_account(session, data)
@@ -36,7 +37,7 @@ async def get_account_balance(
 async def topup(
     data: schemas.TopUp,
     account: models.Account = Depends(get_account),
-    session=Depends(get_async_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     transaction = await transactions_service.topup_account(data, account, session)
     amount = await accounts_service.get_account_balance(session, account)
@@ -54,17 +55,17 @@ async def create_transfer(
 
 
 @router.get(
-    "/api/v1/account-turnover/{account_id}", response_class=schemas.AccountBalance
+    "/api/v1/account-turnover/{account_id}", response_model=schemas.AccountBalance
 )
 async def get_transactions(
-    start_date: datetime = Query(..., alias="startDate"),
-    end_date: datetime = Query(..., alias="endDate"),
-    session=Depends(get_async_session),
+    start_date: Annotated[datetime | None, Query(..., alias="startDate")] = None,
+    end_date: Annotated[datetime | None, Query(..., alias="endDate")] = None,
+    session: AsyncSession = Depends(get_async_session),
     account: models.Account = Depends(get_account),
 ):
     if start_date and end_date and end_date >= start_date:
         raise HTTPException(400)
-    
+
     sum = await transactions_service.get_trans_sum(
         account, start_date, end_date, session
     )
