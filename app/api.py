@@ -45,7 +45,7 @@ async def transfer(
     sender = await get_account_by_id(session, data.sender_id)
     reciever = await get_account_by_id(session, data.reciever_id)
 
-    if sender is None and reciever is None:
+    if sender is None or reciever is None:
         raise HTTPException(400)
 
     await create_transfer(session, sender, reciever, data)
