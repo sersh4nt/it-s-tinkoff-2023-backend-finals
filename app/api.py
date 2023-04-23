@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .deps import get_account, get_async_session
 from .models import Account
-from .schemas import AccountBalance, AccountCreate, AccountCreateResponse, TopupPayload
-from .services import create_account, topup_account
+from .schemas import (
+    AccountBalance,
+    AccountCreate,
+    AccountCreateResponse,
+    TopupPayload,
+    TransferCreate,
+)
+from .services import create_account, create_transfer, get_account_by_id, topup_account
 
 router = APIRouter(prefix="/api/v1")
 
@@ -29,4 +35,18 @@ async def topup(
     session: AsyncSession = Depends(get_async_session),
 ):
     await topup_account(session, account, data)
+    return {}
+
+
+@router.post("/transfers")
+async def transfer(
+    data: TransferCreate, session: AsyncSession = Depends(get_async_session)
+):
+    sender = await get_account_by_id(session, data.sender_id)
+    reciever = await get_account_by_id(session, data.reciever_id)
+
+    if sender is None and reciever is None:
+        raise HTTPException(400)
+
+    await create_transfer(session, sender, reciever, data)
     return {}

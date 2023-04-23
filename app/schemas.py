@@ -31,3 +31,10 @@ class AccountBalance(BaseModel):
 class TopupPayload(BaseModel):
     amount: float
     date: datetime = Field(..., alias="topUpDate")
+
+
+class TransferCreate(BaseModel):
+    sender_id: int = Field(..., alias="senderAccount")
+    reciever_id: int = Field(..., alias="recieverAccount")
+    date: datetime = Field(..., alias="transferDate")
+    sender_amount: float = Field(..., alias="amountInSenderCurrency")

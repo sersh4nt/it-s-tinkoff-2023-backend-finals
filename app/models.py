@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Dict, Tuple
 
 from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Numeric, String
 
@@ -26,5 +27,27 @@ class Transaction(Base):
     sender_id: int = Column(ForeignKey("accounts.id"))
     reciever_id: int = Column(ForeignKey("accounts.id"), nullable=False)
     date: datetime = Column(DateTime(timezone=True))
-    amount: int = Column(Numeric(18, 9))
-    rate: Decimal = Column(Numeric(18, 9))
+    reciever_amount: int = Column(Numeric(18, 2))
+    sender_amount: int = Column(Numeric(18, 2))
+
+
+class RateAggregator:
+    def __init__(self):
+        self.rates = dict()
+
+    def calculate_reciever_amount(
+        self, sender_currency: str, reciever_currency: str, amount: Decimal
+    ) -> Decimal:
+        rate = self.get_rate(sender_currency, reciever_currency)
+        return round(amount * rate, 2)
+
+    def get_rate(self, sender_currency: str, reciever_currency: str) -> Decimal:
+        if sender_currency == reciever_currency:
+            return Decimal(1)
+        return self.rates[(sender_currency, reciever_currency)]
+
+    def update_rates(self, new_rates: Dict[Tuple[str, str], Decimal]) -> None:
+        self.rates = new_rates
+
+
+rate_aggregator = RateAggregator()

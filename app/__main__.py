@@ -8,24 +8,25 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.config import settings
-
 from .api import router
+from .config import settings
 from .db import Base, engine
+from .models import rate_aggregator
 
-# async def consume():
-#     async with AIOKafkaConsumer(
-#         settings.CURRENCY_KAFKA_TOPIC_NAME,
-#         bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
-#         value_deserializer=lambda x: json.loads(x.decode("utf-8")),
-#     ) as consumer:
-#         async for message in consumer:
-#             new_rate = {}
-#             for k, v in message.value.items():
-#                 l, r = k[:3], k[3:]
-#                 new_rate[(l, r)] = Decimal(v)
-#                 new_rate[(r, l)] = Decimal(1) / Decimal(v)
-#             rate.update_rate(new_rate)
+
+async def consume():
+    async with AIOKafkaConsumer(
+        settings.CURRENCY_KAFKA_TOPIC_NAME,
+        bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
+        value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+    ) as consumer:
+        async for message in consumer:
+            new_rate = {}
+            for k, v in message.value.items():
+                l, r = k[:3], k[3:]
+                new_rate[(l, r)] = Decimal(v)
+                new_rate[(r, l)] = Decimal(1) / Decimal(v)
+            rate_aggregator.update_rates(new_rate)
 
 
 app = FastAPI()
@@ -37,7 +38,7 @@ async def create_tables() -> None:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    # asyncio.create_task(consume())
+    asyncio.create_task(consume())
 
 
 @app.exception_handler(RequestValidationError)
