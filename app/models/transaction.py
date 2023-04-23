@@ -17,4 +17,4 @@ class Transaction(Base):
     date: datetime = Column(DateTime(timezone=True))
     reciever_currency: str = Column(String(length=3))
     sender_currency: Optional[str] = Column(String(length=3))
-    rate: Decimal = Column(Numeric(22, 2))
+    rate: Decimal = Column(Numeric(18, 9))

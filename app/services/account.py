@@ -29,7 +29,7 @@ async def get_account_balance(session: AsyncSession, account: models.Account):
             func.sum(
                 case(
                     (Transaction.reciever_id == account.id, Transaction.amount),
-                    else_=-Transaction.amount,
+                    else_=-Transaction.amount/Transaction.rate,
                 )
             ).filter(
                 or_(
@@ -39,4 +39,4 @@ async def get_account_balance(session: AsyncSession, account: models.Account):
             )
         )
     )
-    return value or 0
+    return round(value or 0, 2)
