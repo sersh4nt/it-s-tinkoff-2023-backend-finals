@@ -1,9 +1,10 @@
 from typing import AsyncGenerator
-from fastapi import Depends, HTTPException
 
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.account import get_account_by_id
-from app.db.session import async_session
+
+from .db import async_session
+from .services import get_account_by_id
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
