@@ -82,5 +82,5 @@ async def get_transactions_saldo(
     if dt_to is not None:
         query.filter(Transaction.date <= dt_to)
 
-    saldo = await session.scalar(query)
+    saldo = await session.scalar(select(query))
     return Decimal(saldo or 0)
