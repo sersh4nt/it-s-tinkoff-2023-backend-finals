@@ -43,6 +43,8 @@ async def create_transaction(
         rate = rate_service.get_rate(sender.currency, reciever.currency)
         amount *= rate
 
+    amount = round(amount, 2)
+
     sender_money = await get_account_balance(session, sender)
     if sender_money < amount:
         raise HTTPException(400)
