@@ -69,7 +69,7 @@ async def get_transactions_saldo(
 ) -> List[Transaction]:
     query = func.sum(
         case(
-            (Transaction.sender_id == account.id, -Transaction.sender_amount),
+            (Transaction.sender_id == account.id, Transaction.sender_amount),
             else_=Transaction.reciever_amount,
         )
     ).filter(
