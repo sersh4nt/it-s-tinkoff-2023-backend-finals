@@ -1,6 +1,5 @@
 import asyncio
 import json
-from collections import defaultdict
 from decimal import Decimal
 
 import uvicorn
@@ -23,11 +22,12 @@ async def consume():
         value_deserializer=lambda x: json.loads(x.decode("utf-8")),
     ) as consumer:
         async for message in consumer:
-            rate_ = defaultdict(lambda: dict())
+            new_rate = {}
             for k, v in message.value.items():
-                rate_[k[:3]][k[3:]] = Decimal(v)
-                rate_[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
-            rate.update_rate(rate_)
+                l, r = k[:3], k[3:]
+                new_rate[(l, r)] = Decimal(v)
+                new_rate[(r, l)] = Decimal(1) / Decimal(v)
+            rate.update_rate(new_rate)
 
 
 app = FastAPI()

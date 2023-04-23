@@ -40,8 +40,9 @@ async def create_transaction(
     amount = Decimal(amount)
 
     if sender.currency != reciever.currency:
-        rate = rate_service.get_rate(sender.currency, reciever.currency)
-        amount *= rate
+        # sender - usd, reciever - eur
+        rate = rate_service.get_rate(reciever.currency, sender.currency)
+        amount /= rate
 
     amount = round(amount, 2)
 
