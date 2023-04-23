@@ -35,6 +35,6 @@ class TopupPayload(BaseModel):
 
 class TransferCreate(BaseModel):
     sender_id: int = Field(..., alias="senderAccount")
-    reciever_id: int = Field(..., alias="recieverAccount")
+    reciever_id: int = Field(..., alias="receiverAccount")
     date: datetime = Field(..., alias="transferDate")
     sender_amount: float = Field(..., alias="amountInSenderCurrency", ge=0)
