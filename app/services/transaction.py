@@ -41,7 +41,7 @@ async def create_transaction(
 
     if sender.currency != reciever.currency:
         rate = rate_service.get_rate(sender.currency, reciever.currency)
-        amount /= rate
+        amount *= rate
 
     sender_money = await get_account_balance(session, sender)
     if sender_money < amount:
