@@ -17,22 +17,17 @@ from app.services.kafka import rate
 
 
 async def consume():
-    consumer = AIOKafkaConsumer(
+    async with AIOKafkaConsumer(
         settings.CURRENCY_KAFKA_TOPIC_NAME,
         bootstrap_servers=f"{settings.KAFKA_HOST}:{settings.KAFKA_PORT}",
-        value_deserializer=lambda x: json.loads(x),
-    )
-
-    await consumer.start()
-    try:
+        value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+    ) as consumer:
         async for message in consumer:
             rate_ = defaultdict(lambda: dict())
             for k, v in message.value.items():
                 rate[k[:3]][k[3:]] = Decimal(v)
                 rate[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
             rate.update_rate(rate_)
-    finally:
-        consumer.stop()
 
 
 app = FastAPI()
