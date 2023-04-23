@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .deps import get_account, get_async_session
@@ -10,7 +13,13 @@ from .schemas import (
     TopupPayload,
     TransferCreate,
 )
-from .services import create_account, create_transfer, get_account_by_id, topup_account
+from .services import (
+    create_account,
+    create_transfer,
+    get_account_by_id,
+    get_transactions_saldo,
+    topup_account,
+)
 
 router = APIRouter(prefix="/api/v1")
 
@@ -50,3 +59,17 @@ async def transfer(
 
     await create_transfer(session, sender, reciever, data)
     return {}
+
+
+@router.get("/account-turnover/{account_id}", response_model=AccountBalance)
+async def get_turnover_balance(
+    account: Account = Depends(get_account),
+    session: AsyncSession = Depends(get_async_session),
+    dt_from: Annotated[datetime | None, Query(alias="startDate")] = None,
+    dt_to: Annotated[datetime | None, Query(alias="endDate")] = None,
+):
+    if dt_from and dt_to and dt_from >= dt_to:
+        raise HTTPException(400)
+
+    amount = await get_transactions_saldo(session, account, dt_from, dt_to)
+    return {"amount": amount, "currency": account.currency}

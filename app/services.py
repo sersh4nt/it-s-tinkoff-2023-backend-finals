@@ -1,6 +1,9 @@
+from datetime import datetime
 from decimal import Decimal
+from typing import List
 
 from fastapi import HTTPException
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import Account, Transaction, rate_aggregator
@@ -24,7 +27,9 @@ async def topup_account(
 ) -> Transaction:
     amount = Decimal(data.amount)
     account.balance += amount
-    transaction = Transaction(reciever_id=account.id, reciever_amount=amount, date=data.date)
+    transaction = Transaction(
+        reciever_id=account.id, reciever_amount=amount, date=data.date
+    )
     session.add(transaction)
     await session.commit()
     return transaction
@@ -54,3 +59,28 @@ async def create_transfer(
     session.add(transaction)
     await session.commit()
     return transaction
+
+
+async def get_transactions_saldo(
+    session: AsyncSession,
+    account: Account,
+    dt_from: datetime | None,
+    dt_to: datetime | None,
+) -> List[Transaction]:
+    query = func.sum(
+        case(
+            (Transaction.sender_id == account.id, -Transaction.sender_amount),
+            else_=Transaction.reciever_amount,
+        )
+    ).filter(
+        or_(Transaction.sender_id == account.id, Transaction.reciever_id == account.id)
+    )
+
+    if dt_from is not None:
+        query.filter(Transaction.date >= dt_from)
+
+    if dt_to is not None:
+        query.filter(Transaction.date <= dt_to)
+
+    saldo = await session.scalar(func.sum())
+    return Decimal(saldo or 0)
