@@ -26,8 +26,8 @@ async def consume():
             print(message)
             rate_ = defaultdict(lambda: dict())
             for k, v in message.value.items():
-                rate[k[:3]][k[3:]] = Decimal(v)
-                rate[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
+                rate_[k[:3]][k[3:]] = Decimal(v)
+                rate_[k[3:]][k[:3]] = Decimal(1) / Decimal(v)
             rate.update_rate(rate_)
 
 
