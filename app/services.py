@@ -24,7 +24,7 @@ async def topup_account(
 ) -> Transaction:
     amount = Decimal(data.amount)
     account.balance += amount
-    transaction = Transaction(reciever_id=account.id, amount=amount, date=data.date)
+    transaction = Transaction(reciever_id=account.id, reciever_amount=amount, date=data.date)
     session.add(transaction)
     await session.commit()
     return transaction
