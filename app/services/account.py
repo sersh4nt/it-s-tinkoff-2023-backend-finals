@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import case, func, or_, select, text
+from sqlalchemy import and_, case, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models, schemas
@@ -29,7 +29,11 @@ async def get_account_balance(session: AsyncSession, account: models.Account):
             func.sum(
                 case(
                     (Transaction.reciever_id == account.id, Transaction.amount),
-                    else_=-Transaction.amount/Transaction.rate,
+                    (
+                        Transaction.sender_id == account.id,
+                        -Transaction.amount * Transaction.rate,
+                    ),
+                    else_=-Transaction.amount,
                 )
             ).filter(
                 or_(
