@@ -39,7 +39,7 @@ class RateAggregator:
         self, sender_currency: str, reciever_currency: str, amount: Decimal
     ) -> Decimal:
         rate = self.get_rate(sender_currency, reciever_currency)
-        return round(amount * rate, 2)
+        return round(amount / rate, 2)
 
     def get_rate(self, sender_currency: str, reciever_currency: str) -> Decimal:
         if sender_currency == reciever_currency:
